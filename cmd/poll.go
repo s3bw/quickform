@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/skip2/go-qrcode"
 	"github.com/spf13/cobra"
 
@@ -15,13 +16,16 @@ import (
 var (
 	theme string
 	name  string
+	blue  = color.New(color.FgBlue).SprintFunc()
+	cyan  = color.New(color.FgCyan).SprintFunc()
+	green = color.New(color.FgGreen).SprintFunc()
+	red   = color.New(color.FgRed).SprintFunc()
 )
 
 var pollCmd = &cobra.Command{
 	Use:   "poll",
 	Short: "Create a poll with multiple choices",
 	Long: `Create a poll with multiple choices and share it via URL and QR code.
-Available themes: default, orbital, fractal, art-splash, pin-up, paper-invite, mystery, school-bell, spaceboy, desk-space
 
 Run 'quickform themes' to see detailed theme descriptions.`,
 	RunE:  runPoll,
@@ -36,28 +40,28 @@ func init() {
 func runPoll(cmd *cobra.Command, args []string) error {
 	accessToken := os.Getenv("QUICKFORM_ACCESS_TOKEN")
 	if accessToken == "" {
-		return fmt.Errorf("QUICKFORM_ACCESS_TOKEN environment variable is not set")
+		return fmt.Errorf("%s environment variable is not set", red("QUICKFORM_ACCESS_TOKEN"))
 	}
 
 	client := typeform.NewClient(accessToken)
 
 	// Get the question
-	fmt.Print("Enter Question:\n$ ")
+	fmt.Printf("%s\n$ ", cyan("Enter Question:"))
 	reader := bufio.NewReader(os.Stdin)
 	question, err := reader.ReadString('\n')
 	if err != nil {
-		return fmt.Errorf("error reading question: %w", err)
+		return fmt.Errorf("%s: %w", red("error reading question"), err)
 	}
 	question = strings.TrimSpace(question)
 
 	// Get the choices
-	fmt.Println("\nEnter choices (press Enter to finish):")
+	fmt.Printf("\n%s\n", cyan("Enter choices (press Enter to finish):"))
 	var choices []typeform.Choice
 	for {
 		fmt.Print("$ ")
 		choice, err := reader.ReadString('\n')
 		if err != nil {
-			return fmt.Errorf("error reading choice: %w", err)
+			return fmt.Errorf("%s: %w", red("error reading choice"), err)
 		}
 		choice = strings.TrimSpace(choice)
 		
@@ -68,7 +72,7 @@ func runPoll(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(choices) < 2 {
-		return fmt.Errorf("at least 2 choices are required")
+		return fmt.Errorf("%s", red("at least 2 choices are required"))
 	}
 
 	// Set form title
@@ -109,17 +113,17 @@ func runPoll(cmd *cobra.Command, args []string) error {
 	// Create the form
 	urls, err := client.CreateForm(form)
 	if err != nil {
-		return fmt.Errorf("error creating form: %w", err)
+		return fmt.Errorf("%s: %w", red("error creating form"), err)
 	}
 
-	fmt.Printf("\nPoll created successfully!\n")
-	fmt.Printf("Share this URL: %s\n", urls.Display)
-	fmt.Printf("View responses: %s\n\n", urls.Responses)
+	fmt.Printf("\n%s\n", green("Poll created successfully!"))
+	fmt.Printf("Share this URL: %s\n", blue(urls.Display))
+	fmt.Printf("View responses: %s\n\n", blue(urls.Responses))
 
 	// Generate and display QR code
 	qr, err := qrcode.New(urls.Display, qrcode.Medium)
 	if err != nil {
-		return fmt.Errorf("error generating QR code: %w", err)
+		return fmt.Errorf("%s: %w", red("error generating QR code"), err)
 	}
 
 	// Convert to ASCII
