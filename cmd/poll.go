@@ -14,8 +14,10 @@ import (
 )
 
 var (
-	theme string
-	name  string
+	theme             string
+	name              string
+	multipleSelection bool
+
 	blue  = color.New(color.FgBlue).SprintFunc()
 	cyan  = color.New(color.FgCyan).SprintFunc()
 	green = color.New(color.FgGreen).SprintFunc()
@@ -28,13 +30,14 @@ var pollCmd = &cobra.Command{
 	Long: `Create a poll with multiple choices and share it via URL and QR code.
 
 Run 'quickform themes' to see detailed theme descriptions.`,
-	RunE:  runPoll,
+	RunE: runPoll,
 }
 
 func init() {
 	rootCmd.AddCommand(pollCmd)
 	pollCmd.Flags().StringVar(&theme, "theme", "", "Theme for the poll (e.g., 'default', 'orbital', 'fractal')")
 	pollCmd.Flags().StringVar(&name, "name", "", "Name for the poll (default: 'Quick Form')")
+	pollCmd.Flags().BoolVar(&multipleSelection, "multiple", false, "Allow multiple selections (default: false)")
 }
 
 func runPoll(cmd *cobra.Command, args []string) error {
@@ -64,7 +67,7 @@ func runPoll(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("%s: %w", red("error reading choice"), err)
 		}
 		choice = strings.TrimSpace(choice)
-		
+
 		if choice == "" {
 			break
 		}
@@ -89,8 +92,8 @@ func runPoll(cmd *cobra.Command, args []string) error {
 				Type:  "multiple_choice",
 				Title: question,
 				Properties: typeform.Properties{
-					AllowMultipleSelection: false,
-					Choices:               choices,
+					AllowMultipleSelection: multipleSelection,
+					Choices:                choices,
 				},
 				Validations: typeform.Validations{
 					Required: true,
@@ -132,4 +135,4 @@ func runPoll(cmd *cobra.Command, args []string) error {
 	fmt.Println(ascii)
 
 	return nil
-} 
+}
